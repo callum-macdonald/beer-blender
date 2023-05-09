@@ -1,5 +1,7 @@
 .beerLoader {
     animation: spin 4s linear infinite;
+    z-index: 2;
+    opacity: 100;
   }
   
   @keyframes spin {

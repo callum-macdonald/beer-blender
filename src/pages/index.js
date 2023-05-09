@@ -1,17 +1,124 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { CircularProgress, Container, TextField, Button, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import Image from 'next/image';
+import Footer from '../../components/Footer';
 import styles from '../styles/BeerLoader.module.css';
 import axios from 'axios';
-
+import { Square } from '@mui/icons-material';
+//import './styles/Disclaimer.css';
 
 function App() {
-  const [beerDescription, setBeerDescription] = useState('I want a nice light colored beer, with a hop-forward profile, and about 4.5% abv');
+  const [beerDescription, setBeerDescription] = useState('A nice light colored beer, with a hop-forward profile using Citra and Simcoe, with about 4.5% abv');
+  //const [beerDescription, setBeerDescription] = useState('A NEIPA with citra, and galaxy');
   const [beerVolume, setBeerVolume] = useState(23);
-  const [brewType, setBrewType] = useState('extract');
+  const [brewType, setBrewType] = useState('all grain');
   const [units, setUnits] = useState('metric');
-  const [recipe, setRecipe] = useState('');
+  const [generatedResponse, setGeneratedResponse] = useState('');
+  const [ingredients, setIngredients] = useState('');
   const [loading, setLoading] = useState(false);
   const [instructions, setInstructions] = useState('');
+  const [estimates, setEstimates] = useState('');
+  const [abv, setABV] = useState('');
+  const [ibu, setIBU] = useState('');
+  const [srm, setSRM] = useState('');
+  const ingredientsRef = useRef(null);
+  const instructionsRef = useRef(null);
+  const statsRef = useRef(null);
+
+
+  function srmConvert(srmEstimate) {
+    const colorHashTable = {
+      1: '#FFE699',
+      2: '#FFD878',
+      3: '#FFCA5A',
+      4: '#FFBF42',
+      5: '#FBB123',
+      6: '#F8A600',
+      7: '#F39C00',
+      8: '#EA8F00',
+      9: '#E58500',
+      10: '#DE7C00',
+      11: '#D77200',
+      12: '#CF6900',
+      13: '#CB6200',
+      14: '#C35900',
+      15: '#BB5100',
+      16: '#B54C00',
+      17: '#B04500',
+      18: '#A63E00',
+      19: '#A13700',
+      20: '#9B3200',
+      21: '#952D00',
+      22: '#8E2900',
+      23: '#882300',
+      24: '#821E00',
+      25: '#7B1A00',
+      26: '#771900',
+      27: '#701400',
+      28: '#6A0E00',
+      29: '#660D00',
+      30: '#5E0B00',
+      31: '#5A0A02',
+      32: '#600903',
+      33: '#520907',
+      34: '#4C0505',
+      35: '#470606',
+      36: '#440607',
+      37: '#3F0708',
+      38: '#3B0607',
+      39: '#3A070B',
+      40: '#36080A',
+    };
+
+
+    const roundedNumber = Math.round(srmEstimate);
+    // Clamp the rounded number between 1 and 30 (inclusive)
+    const clampedNumber = Math.max(1, Math.min(roundedNumber, 40));
+    return colorHashTable[clampedNumber];
+  }
+
+  function BeerStats({ beerColor, abv, srm, ibu, statsRef }) {
+
+
+    return (
+      <div ref={statsRef} className="statsContainer">
+        <div className="leftItem">
+          <svg xmlns="http://www.w3.org/2000/svg" width="110" height="200">
+            <g transform="scale(0.3)">
+              <rect x="41.9167" y="87.9553" width="316" height="500.7088" style={{ fill: { beerColor } }} />
+              <rect x="68" y="118" width="284" height="430" fill={beerColor} />
+              <path d="M105,110q9 -40,225 10v50q-120 20,-450 -15Zq-90 -40,-225 0v-50q120 20,280 2Z" fill="#FFFFFF" stroke="#3D414A" strokeWidth="6" />
+              <path d="M0,0V606.5771H398V0H0ZM289.3819,510.2375C258.8333,537.1666,131,537.1666,104.5554,510.0182L67.9448,119.2761c0-2.6406,12.3885-5.681,131.0552-5.681,102.0736,0,131.5215,3.4049,131.5215,5.681Z" style={{ fill: '#fff' }} />
+              <path d="M106.1667,512.011c36.3333,22.989,135.9081,26.6777,182.8707,0L285.3333,546C253.5,574.5,143.25,578,108.6785,546Z" style={{ fill: '#eee' }} />
+              <path d="M287.6667,511.2773c-28.7987,24.056-150.9984,26.6107-181.5,0" style={{ fill: 'none', stroke: '#3d414a', strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '6px' }} />
+              <path d="M67.9448,119.2761l39.8773,425.6074c22.9279,32.1166,152.5112,31.45,177.9141,0l44.7853-425.6074c0-2.2761-29.4479-5.681-131.5215-5.681C80.3333,113.5951,67.9448,116.6355,67.9448,119.2761Z" style={{ fill: 'none', stroke: '#3d414a', strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '12px' }} />
+            </g>
+          </svg>
+        </div>
+
+        <div className="rightItem">
+          <p>ABV: {abv}%</p>
+          <p>SRM: {srm}</p>
+          <p>IBU: {ibu}</p>
+        </div>
+      </div>
+    );
+  };
+
+  
+
+  const scrollToResponse = (ref) => {
+    if (ref.current !== null) {
+      ref.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  function scrollToBottom() {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth',
+    });
+  }
 
   const handleChange = (event, setState) => {
     setState(event.target.value);
@@ -19,61 +126,120 @@ function App() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setLoading(true);
-    // Call your backend API here to keep the API key secure
-    const response = await generateRecipe({
+    // Call backend API here to keep the API key secure
+    const response = await makeRecipe({
       beerDescription: beerDescription,
       beerVolume: beerVolume,
       units: units,
       brewType: brewType,
     });
-    setLoading(false);
-    // Assuming the response contains recipe and instructions
-    setRecipe(response.recipe);
-    setInstructions(response.instructions);
   };
 
-  const generateRecipe = async ({beerDescription, beerVolume, units, brewType}) => {
-    try {
-      const response = await axios.post('/api/brew', {
-        beerDescription: beerDescription,
-        beerVolume: beerVolume,
-        units: units,
-        brewType: brewType,
-      });
+  const makeRecipe = async ({ beerDescription, beerVolume, units, brewType }) => {
+    setGeneratedResponse("");
+    setIngredients("");
+    setInstructions("");
+    setEstimates("");
+    setABV("");
+    setSRM("");
+    setIBU("");
+    setLoading(true);
+    const response = await fetch("/api/brew", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        beerDescription,
+        beerVolume,
+        units,
+        brewType,
+      }),
+    });
 
-      console.log(response.data)
-      //const recipe = response.data.recipe;
-      //alert(response.data.recipe);
-      return { recipe: response.data.recipe, instructions: response.data.instructions };
-    } catch (error) {
-      console.error('Error generating recipe:', error.response || error);
-      return { recipe: '', instructions: '' };
+    if (!response.ok) {
+      throw new Error(response.statusText);
     }
 
+    // This data is a ReadableStream
+    const data = response.body;
+    if (!data) {
+      return;
+    }
+
+    const reader = data.getReader();
+    const decoder = new TextDecoder();
+    let done = false;
+
+    while (!done) {
+      const { value, done: doneReading } = await reader.read();
+      done = doneReading;
+      const chunkValue = decoder.decode(value);
+      setGeneratedResponse((prev) => prev + chunkValue);
+    }
+
+    setLoading(false);
+
   };
+
+  function updateData(generatedResponse) {
+    useEffect(() => {
+      // clean potential heading markdown which sometimes occurs
+      let genRes = generatedResponse.replace(/\*\*/g, '');
+      if (genRes.split("Estimates:").length > 1) {
+        if (!loading) {
+          const numberPattern = /[0-9]*\.?[0-9]+/g;
+          // get everything after "Estimates:"
+          const estTemp = genRes.split("Estimates:")[1];
+          // find number between "ABV:" and "SRM:"
+          const abvTemp = estTemp.split("ABV:")[1].split("SRM:")[0].match(numberPattern)[0];
+          setABV(abvTemp ? parseFloat(abvTemp).toFixed(1) : null);
+          // find number between "SRM:" and "IBU:"
+          const srmTemp = estTemp.split("SRM:")[1].split("IBU:")[0].match(numberPattern)[0];
+          setSRM(srmTemp ? parseFloat(srmTemp).toFixed(1) : null);
+          // find number between after "IBU:"
+          const ibuTemp = estTemp.split("IBU:")[1].match(numberPattern)[0];
+          setIBU(ibuTemp ? parseFloat(ibuTemp).toFixed(0) : null);
+          scrollToResponse(statsRef);
+        }
+      } else if (genRes.split("Instructions:").length > 1) {
+        scrollToResponse(instructionsRef);
+        setInstructions(genRes.split("Instructions:")[1].slice(0, -9));
+      } else if (genRes.split("Ingredients:").length > 1 && genRes.split("Ingredients:")[1].length >= 12) {
+        scrollToResponse(ingredientsRef);
+        setIngredients(genRes.split("Ingredients:")[1].slice(0, -12));
+      }
+    }, [generatedResponse, loading, abv]);
+  }
+
+  updateData(generatedResponse);
+
+  //<h1 className="title">BeerBlender</h1>
+  //<h3 className="subtitle">Homebrew Recipe Generator</h3>
+
 
   return (
     <Container className="Container" maxWidth="sm">
-      <h1 className="title">BeerBlender</h1>
-      <h3 className="subtitle">Beer Recipe Generator</h3>
+      <div className="logo">
+        <Image src="/BeerBlender.svg" alt="Logo" width={300} height={100} />
+      </div>
       <form onSubmit={handleSubmit}>
         <TextField
           fullWidth
           multiline
           rows={3}
           label="Beer Description"
-          value={beerDescription}
+          defaultValue={beerDescription}
           onChange={(event) => handleChange(event, setBeerDescription)}
           margin="normal"
         />
         <FormControl fullWidth margin="normal">
-        <InputLabel >Measurement Units</InputLabel>
+          <InputLabel >Measurement Units</InputLabel>
           <Select label="Measurement Units" value={units} onChange={(event) => handleChange(event, setUnits)}>
             <MenuItem value="metric">Metric</MenuItem>
             <MenuItem value="imperial">Imperial</MenuItem>
           </Select>
-          
+
         </FormControl>
         <FormControl fullWidth margin="normal">
           <InputLabel >Desired Beer Volume</InputLabel>
@@ -89,31 +255,39 @@ function App() {
           <InputLabel>Brew method</InputLabel>
           <Select label="Brew method" value={brewType} onChange={(event) => handleChange(event, setBrewType)}>
             <MenuItem value="extract">Extract</MenuItem>
-            <MenuItem value="partial extract">Partial Extract</MenuItem>
             <MenuItem value="all grain">All-Grain</MenuItem>
             <MenuItem value="brew in a bag">All-Grain BIAB (Brew In A Bag)</MenuItem>
             {/* Add more options as needed */}
           </Select>
         </FormControl>
-        <Button type="submit" variant="contained" color="primary" onClick={handleSubmit}>
-          Generate Recipe
+        <Button style={{ height: "50px", marginTop:"10px" }} fullWidth type="submit" variant="contained" color="primary" disabled={loading}>
+          {(loading) ? (
+            <span className="beerLoader">🍺</span>
+          ) : (
+            "Generate Recipe"
+          )}
         </Button>
       </form>
-      {loading && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
-          <span className="beerLoader">🍺</span>
+
+      {ingredients && (
+        <div>
+          <h2 ref={ingredientsRef}>Ingredients:</h2>
+          <pre className="ingredientsSection" style={{ whiteSpace: "pre-wrap", marginBottom: "10px" }}>{ingredients}</pre>
         </div>
       )}
-      {recipe && (
+      {instructions && (
         <div>
-          <h2>Ingredients:</h2>
-          <pre className="recipeSection" style={{ whiteSpace: "pre-wrap" }}>{recipe}</pre>
-          <h2>Instructions:</h2>
+          <h2 style={{marginTop: "-15px"}} ref={instructionsRef}>Instructions:</h2>
           <pre className="instructionSection" style={{ whiteSpace: "pre-wrap" }}>{instructions}</pre>
         </div>
       )}
+      {abv && (
+        <BeerStats beerColor={srmConvert(srm)} abv={abv} srm={srm} ibu={ibu} statsRef={statsRef} />
+      )}
+      <Footer />
     </Container>
   );
 }
 
+//<BeerGlass beerColor="#4E2A0C"/>
 export default App;

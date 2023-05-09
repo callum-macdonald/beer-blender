@@ -1,4 +1,4 @@
-import '@/styles/globals.css';
+import '../styles/globals.css';
 import '@mui/material/styles';
 
 export default function App({ Component, pageProps }) {
