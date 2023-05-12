@@ -47,8 +47,8 @@ const CashAppPopup = () => {
   return (
     <div>
       <Image 
-        width={20}
-        height={20}
+        width={17}
+        height={17}
         src="/ethereum.svg" 
         alt="ETH Logo" 
         onClick={openPopup} 
@@ -58,7 +58,7 @@ const CashAppPopup = () => {
       {isOpen && (
         <div style={overlayStyles} onClick={closePopup}>
           <div style={popupStyles} onClick={e => e.stopPropagation()}>
-          <p style={{marginTop:"2px", marginBottom:"20px" }}><strong>Donate to API fees</strong> 😁</p>
+          <p style={{marginTop:"2px", marginBottom:"20px" }}>Donate to API fees 😁</p>
             <Image 
             width={220}
             height={220}

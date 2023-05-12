@@ -1,14 +1,72 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { CircularProgress, Container, TextField, Button, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Container, TextField, Button, FormControl, InputLabel, Select, MenuItem, IconButton, InputAdornment } from '@mui/material';
 import Image from 'next/image';
 import Footer from '../../components/Footer';
-import styles from '../styles/BeerLoader.module.css';
-import axios from 'axios';
-import { Square } from '@mui/icons-material';
-//import './styles/Disclaimer.css';
+import ClearIcon from '@mui/icons-material/Clear';
+import { Analytics } from '@vercel/analytics/react';
+
+const beerDescriptionList = [
+  'A nice light colored beer, with a hop-forward profile using Citra and Simcoe, and about 4.5% abv',
+  'A hoppy lager, with dark malts, and some flaked rice',
+  'A raspberry kettle sour, with little to no bitterness',
+  'A Pliny the Elder clone',
+  'A 6.5% abv Belgian pale ale, with strong bitterness',
+  'An imperial stout, using only English hops'  
+]
+
+function srmConvert(srmEstimate) {
+  const colorHashTable = {
+    1: '#FFE699',
+    2: '#FFD878',
+    3: '#FFCA5A',
+    4: '#FFBF42',
+    5: '#FBB123',
+    6: '#F8A600',
+    7: '#F39C00',
+    8: '#EA8F00',
+    9: '#E58500',
+    10: '#DE7C00',
+    11: '#D77200',
+    12: '#CF6900',
+    13: '#CB6200',
+    14: '#C35900',
+    15: '#BB5100',
+    16: '#B54C00',
+    17: '#B04500',
+    18: '#A63E00',
+    19: '#A13700',
+    20: '#9B3200',
+    21: '#952D00',
+    22: '#8E2900',
+    23: '#882300',
+    24: '#821E00',
+    25: '#7B1A00',
+    26: '#771900',
+    27: '#701400',
+    28: '#6A0E00',
+    29: '#660D00',
+    30: '#5E0B00',
+    31: '#5A0A02',
+    32: '#600903',
+    33: '#520907',
+    34: '#4C0505',
+    35: '#470606',
+    36: '#440607',
+    37: '#3F0708',
+    38: '#3B0607',
+    39: '#3A070B',
+    40: '#36080A',
+  };
+
+
+  const roundedNumber = Math.round(srmEstimate);
+  // Clamp the rounded number between 1 and 30 (inclusive)
+  const clampedNumber = Math.max(1, Math.min(roundedNumber, 40));
+  return colorHashTable[clampedNumber];
+}
 
 function App() {
-  const [beerDescription, setBeerDescription] = useState('A nice light colored beer, with a hop-forward profile using Citra and Simcoe, with about 4.5% abv');
+  const [beerDescription, setBeerDescription] = useState('');
   //const [beerDescription, setBeerDescription] = useState('A NEIPA with citra, and galaxy');
   const [beerVolume, setBeerVolume] = useState(23);
   const [brewType, setBrewType] = useState('all grain');
@@ -24,58 +82,20 @@ function App() {
   const ingredientsRef = useRef(null);
   const instructionsRef = useRef(null);
   const statsRef = useRef(null);
-
-
-  function srmConvert(srmEstimate) {
-    const colorHashTable = {
-      1: '#FFE699',
-      2: '#FFD878',
-      3: '#FFCA5A',
-      4: '#FFBF42',
-      5: '#FBB123',
-      6: '#F8A600',
-      7: '#F39C00',
-      8: '#EA8F00',
-      9: '#E58500',
-      10: '#DE7C00',
-      11: '#D77200',
-      12: '#CF6900',
-      13: '#CB6200',
-      14: '#C35900',
-      15: '#BB5100',
-      16: '#B54C00',
-      17: '#B04500',
-      18: '#A63E00',
-      19: '#A13700',
-      20: '#9B3200',
-      21: '#952D00',
-      22: '#8E2900',
-      23: '#882300',
-      24: '#821E00',
-      25: '#7B1A00',
-      26: '#771900',
-      27: '#701400',
-      28: '#6A0E00',
-      29: '#660D00',
-      30: '#5E0B00',
-      31: '#5A0A02',
-      32: '#600903',
-      33: '#520907',
-      34: '#4C0505',
-      35: '#470606',
-      36: '#440607',
-      37: '#3F0708',
-      38: '#3B0607',
-      39: '#3A070B',
-      40: '#36080A',
-    };
-
-
-    const roundedNumber = Math.round(srmEstimate);
-    // Clamp the rounded number between 1 and 30 (inclusive)
-    const clampedNumber = Math.max(1, Math.min(roundedNumber, 40));
-    return colorHashTable[clampedNumber];
-  }
+  const [beerDescriptionDefault, setBeerDescriptionDefault] = useState(null);//() => beerDescriptionList[Math.floor(Math.random() * beerDescriptionList.length)]);
+  
+  useEffect(() => {
+    // This code will only run on the client side, needed to have the random default beer description
+    const existingValue = sessionStorage.getItem('beerDescriptionDefault');
+    if (existingValue) {
+      setBeerDescriptionDefault(existingValue);
+    } else {
+      const initialValue = beerDescriptionList[Math.floor(Math.random() * beerDescriptionList.length)]; // Generate your random value here
+      sessionStorage.setItem('beerDescriptionDefault', initialValue);
+      setBeerDescriptionDefault(initialValue);
+    }
+  }, []);
+  
 
   function BeerStats({ beerColor, abv, srm, ibu, statsRef }) {
 
@@ -105,7 +125,7 @@ function App() {
     );
   };
 
-  
+
 
   const scrollToResponse = (ref) => {
     if (ref.current !== null) {
@@ -113,26 +133,23 @@ function App() {
     }
   };
 
-  function scrollToBottom() {
-    window.scrollTo({
-      top: document.documentElement.scrollHeight,
-      behavior: 'smooth',
-    });
-  }
-
   const handleChange = (event, setState) => {
     setState(event.target.value);
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (!beerDescription.trim()) {
+      setBeerDescription(beerDescriptionDefault);
+    }
     // Call backend API here to keep the API key secure
     const response = await makeRecipe({
-      beerDescription: beerDescription,
+      beerDescription: beerDescription.trim() ? beerDescription : beerDescriptionDefault,
       beerVolume: beerVolume,
       units: units,
       brewType: brewType,
     });
+    //console.log(response);
   };
 
   const makeRecipe = async ({ beerDescription, beerVolume, units, brewType }) => {
@@ -144,6 +161,7 @@ function App() {
     setSRM("");
     setIBU("");
     setLoading(true);
+    //console.log(`"beerDescription = ${beerDescription}"`);
     const response = await fetch("/api/brew", {
       method: "POST",
       headers: {
@@ -156,7 +174,7 @@ function App() {
         brewType,
       }),
     });
-
+    //console.log(response);
     if (!response.ok) {
       throw new Error(response.statusText);
     }
@@ -201,6 +219,7 @@ function App() {
           const ibuTemp = estTemp.split("IBU:")[1].match(numberPattern)[0];
           setIBU(ibuTemp ? parseFloat(ibuTemp).toFixed(0) : null);
           scrollToResponse(statsRef);
+          //console.log(genRes.split("Ingredients:")[0]);
         }
       } else if (genRes.split("Instructions:").length > 1) {
         scrollToResponse(instructionsRef);
@@ -221,17 +240,33 @@ function App() {
   return (
     <Container className="Container" maxWidth="sm">
       <div className="logo">
-        <Image src="/BeerBlender.svg" alt="Logo" width={300} height={100} />
+        <Image priority="true" src="/BeerBlender.svg" alt="Logo" width={300} height={100} />
       </div>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit}
+      >
         <TextField
           fullWidth
           multiline
           rows={3}
-          label="Beer Description"
-          defaultValue={beerDescription}
+          label="Enter Beer Description"
+          placeholder={beerDescriptionDefault}
+          value={beerDescription}
           onChange={(event) => handleChange(event, setBeerDescription)}
           margin="normal"
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="clear beer description"
+                  onClick={() => setBeerDescription('')}
+                  disabled={loading}
+                  style={{marginRight: -13, marginLeft: -15}}
+                >
+                <ClearIcon fontSize="small"/>
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
         />
         <FormControl fullWidth margin="normal">
           <InputLabel >Measurement Units</InputLabel>
@@ -260,7 +295,7 @@ function App() {
             {/* Add more options as needed */}
           </Select>
         </FormControl>
-        <Button style={{ height: "50px", marginTop:"10px" }} fullWidth type="submit" variant="contained" color="primary" disabled={loading}>
+        <Button style={{ height: "50px", marginTop: "10px" }} fullWidth type="submit" variant="contained" color="primary" disabled={loading}>
           {(loading) ? (
             <span className="beerLoader">🍺</span>
           ) : (
@@ -277,7 +312,7 @@ function App() {
       )}
       {instructions && (
         <div>
-          <h2 style={{marginTop: "-15px"}} ref={instructionsRef}>Instructions:</h2>
+          <h2 style={{ marginTop: "-15px" }} ref={instructionsRef}>Instructions:</h2>
           <pre className="instructionSection" style={{ whiteSpace: "pre-wrap" }}>{instructions}</pre>
         </div>
       )}
@@ -285,7 +320,9 @@ function App() {
         <BeerStats beerColor={srmConvert(srm)} abv={abv} srm={srm} ibu={ibu} statsRef={statsRef} />
       )}
       <Footer />
+      <Analytics />
     </Container>
+    
   );
 }
 

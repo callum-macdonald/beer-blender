@@ -65,11 +65,22 @@
 }
 
 .beerLoader {
+  animation: spin 4s linear infinite;
   font-size: 1.5rem;
   animation: App-logo-spin 1.5s linear infinite;
   z-index: 2;
   opacity: 100;
   pointer-events: none;
+}
+
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .ingredientsSection {
@@ -84,7 +95,7 @@
 
 .disclaimer {
   color: #6666667d; 
-  font-size: 0.8em; 
+  font-size: 0.65em; 
   margin-top: 20px;
 }
 
@@ -119,7 +130,7 @@
 
 .leftLink {
   padding: 1rem;
-    
+  margin-left: 15px;
 }
 
 .middleLink {
