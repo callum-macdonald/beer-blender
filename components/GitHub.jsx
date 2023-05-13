@@ -3,7 +3,7 @@ import Link from '@mui/material/Link';
 
 export default function Github() {
     return (
-        <Link href="https://github.com/callum-macdonald/BeerBlender" target="_blank" color="primary" underline="none" marginTop="13px">
+        <Link href="https://github.com/callum-macdonald/beer-blender" target="_blank" color="primary" underline="none" marginTop="13px">
             
       <svg
         xmlns="http://www.w3.org/2000/svg"

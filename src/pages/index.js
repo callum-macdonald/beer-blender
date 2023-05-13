@@ -1,9 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Container, TextField, Button, FormControl, InputLabel, Select, MenuItem, IconButton, InputAdornment } from '@mui/material';
 import Image from 'next/image';
+import Head from "next/head";
 import Footer from '../../components/Footer';
+import BeerStats from '../../components/BeerStats';
 import ClearIcon from '@mui/icons-material/Clear';
 import { Analytics } from '@vercel/analytics/react';
+import srmConvert from '../utils/srmConvert';
 
 const beerDescriptionList = [
   'A nice light colored beer, with a hop-forward profile using Citra and Simcoe, and about 4.5% abv',
@@ -14,56 +17,6 @@ const beerDescriptionList = [
   'An imperial stout, using only English hops'  
 ]
 
-function srmConvert(srmEstimate) {
-  const colorHashTable = {
-    1: '#FFE699',
-    2: '#FFD878',
-    3: '#FFCA5A',
-    4: '#FFBF42',
-    5: '#FBB123',
-    6: '#F8A600',
-    7: '#F39C00',
-    8: '#EA8F00',
-    9: '#E58500',
-    10: '#DE7C00',
-    11: '#D77200',
-    12: '#CF6900',
-    13: '#CB6200',
-    14: '#C35900',
-    15: '#BB5100',
-    16: '#B54C00',
-    17: '#B04500',
-    18: '#A63E00',
-    19: '#A13700',
-    20: '#9B3200',
-    21: '#952D00',
-    22: '#8E2900',
-    23: '#882300',
-    24: '#821E00',
-    25: '#7B1A00',
-    26: '#771900',
-    27: '#701400',
-    28: '#6A0E00',
-    29: '#660D00',
-    30: '#5E0B00',
-    31: '#5A0A02',
-    32: '#600903',
-    33: '#520907',
-    34: '#4C0505',
-    35: '#470606',
-    36: '#440607',
-    37: '#3F0708',
-    38: '#3B0607',
-    39: '#3A070B',
-    40: '#36080A',
-  };
-
-
-  const roundedNumber = Math.round(srmEstimate);
-  // Clamp the rounded number between 1 and 30 (inclusive)
-  const clampedNumber = Math.max(1, Math.min(roundedNumber, 40));
-  return colorHashTable[clampedNumber];
-}
 
 function App() {
   const [beerDescription, setBeerDescription] = useState('');
@@ -85,7 +38,7 @@ function App() {
   const [beerDescriptionDefault, setBeerDescriptionDefault] = useState(null);//() => beerDescriptionList[Math.floor(Math.random() * beerDescriptionList.length)]);
   
   useEffect(() => {
-    // This code will only run on the client side, needed to have the random default beer description
+    // This code will only run on the client side, needed to have the random default beer description not go haywire within session
     const existingValue = sessionStorage.getItem('beerDescriptionDefault');
     if (existingValue) {
       setBeerDescriptionDefault(existingValue);
@@ -96,37 +49,6 @@ function App() {
     }
   }, []);
   
-
-  function BeerStats({ beerColor, abv, srm, ibu, statsRef }) {
-
-
-    return (
-      <div ref={statsRef} className="statsContainer">
-        <div className="leftItem">
-          <svg xmlns="http://www.w3.org/2000/svg" width="110" height="200">
-            <g transform="scale(0.3)">
-              <rect x="41.9167" y="87.9553" width="316" height="500.7088" style={{ fill: { beerColor } }} />
-              <rect x="68" y="118" width="284" height="430" fill={beerColor} />
-              <path d="M105,110q9 -40,225 10v50q-120 20,-450 -15Zq-90 -40,-225 0v-50q120 20,280 2Z" fill="#FFFFFF" stroke="#3D414A" strokeWidth="6" />
-              <path d="M0,0V606.5771H398V0H0ZM289.3819,510.2375C258.8333,537.1666,131,537.1666,104.5554,510.0182L67.9448,119.2761c0-2.6406,12.3885-5.681,131.0552-5.681,102.0736,0,131.5215,3.4049,131.5215,5.681Z" style={{ fill: '#fff' }} />
-              <path d="M106.1667,512.011c36.3333,22.989,135.9081,26.6777,182.8707,0L285.3333,546C253.5,574.5,143.25,578,108.6785,546Z" style={{ fill: '#eee' }} />
-              <path d="M287.6667,511.2773c-28.7987,24.056-150.9984,26.6107-181.5,0" style={{ fill: 'none', stroke: '#3d414a', strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '6px' }} />
-              <path d="M67.9448,119.2761l39.8773,425.6074c22.9279,32.1166,152.5112,31.45,177.9141,0l44.7853-425.6074c0-2.2761-29.4479-5.681-131.5215-5.681C80.3333,113.5951,67.9448,116.6355,67.9448,119.2761Z" style={{ fill: 'none', stroke: '#3d414a', strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: '12px' }} />
-            </g>
-          </svg>
-        </div>
-
-        <div className="rightItem">
-          <p>ABV: {abv}%</p>
-          <p>SRM: {srm}</p>
-          <p>IBU: {ibu}</p>
-        </div>
-      </div>
-    );
-  };
-
-
-
   const scrollToResponse = (ref) => {
     if (ref.current !== null) {
       ref.current.scrollIntoView({ behavior: "smooth" });
@@ -149,7 +71,6 @@ function App() {
       units: units,
       brewType: brewType,
     });
-    //console.log(response);
   };
 
   const makeRecipe = async ({ beerDescription, beerVolume, units, brewType }) => {
@@ -161,7 +82,6 @@ function App() {
     setSRM("");
     setIBU("");
     setLoading(true);
-    //console.log(`"beerDescription = ${beerDescription}"`);
     const response = await fetch("/api/brew", {
       method: "POST",
       headers: {
@@ -174,7 +94,6 @@ function App() {
         brewType,
       }),
     });
-    //console.log(response);
     if (!response.ok) {
       throw new Error(response.statusText);
     }
@@ -233,12 +152,11 @@ function App() {
 
   updateData(generatedResponse);
 
-  //<h1 className="title">BeerBlender</h1>
-  //<h3 className="subtitle">Homebrew Recipe Generator</h3>
-
-
   return (
     <Container className="Container" maxWidth="sm">
+      <Head>
+        <title>BeerBlender</title>
+      </Head>
       <div className="logo">
         <Image priority="true" src="/BeerBlender.svg" alt="Logo" width={300} height={100} />
       </div>
