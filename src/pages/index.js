@@ -20,7 +20,6 @@ const beerDescriptionList = [
 
 function App() {
   const [beerDescription, setBeerDescription] = useState('');
-  //const [beerDescription, setBeerDescription] = useState('A NEIPA with citra, and galaxy');
   const [beerVolume, setBeerVolume] = useState(23);
   const [brewType, setBrewType] = useState('all grain');
   const [units, setUnits] = useState('metric');
@@ -35,8 +34,8 @@ function App() {
   const ingredientsRef = useRef(null);
   const instructionsRef = useRef(null);
   const statsRef = useRef(null);
-  const [beerDescriptionDefault, setBeerDescriptionDefault] = useState(null);//() => beerDescriptionList[Math.floor(Math.random() * beerDescriptionList.length)]);
-  
+  const [beerDescriptionDefault, setBeerDescriptionDefault] = useState(null);
+
   useEffect(() => {
     // This code will only run on the client side, needed to have the random default beer description not go haywire within session
     const existingValue = sessionStorage.getItem('beerDescriptionDefault');
@@ -244,5 +243,4 @@ function App() {
   );
 }
 
-//<BeerGlass beerColor="#4E2A0C"/>
 export default App;
