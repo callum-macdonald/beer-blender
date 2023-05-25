@@ -2,6 +2,10 @@
 // based on gihub.com/Nutlope/twitterbio
 import { OpenAIStream } from "../../utils/OpenAIStream";
 
+if (!process.env.OPENAI_API_KEY) {
+  throw new Error("Missing env var from OpenAI");
+}
+
 export const config = {
   runtime: "edge",
 };

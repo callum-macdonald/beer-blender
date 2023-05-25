@@ -1,4 +1,4 @@
-// From gihub.com/Nutlope/twitterbio
+// From github.com/Nutlope/twitterbio
 
 import { createParser, ParsedEvent, ReconnectInterval } from "eventsource-parser";
 
@@ -28,14 +28,12 @@ export async function OpenAIStream(payload) {
           }
           try {
             const json = JSON.parse(data);
-            //console.log(json);
             const text = json.choices[0].delta?.content || "";
 
             if (counter < 2 && (text.match(/\n/) || []).length) {
               // this is a prefix character (i.e., "\n\n"), do nothing
               return;
             }
-            //console.log(text);
             const queue = encoder.encode(text);
             controller.enqueue(queue);
             counter++;
