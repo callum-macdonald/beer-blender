@@ -7,9 +7,10 @@ import BeerStats from '../../components/BeerStats';
 import ClearIcon from '@mui/icons-material/Clear';
 import { Analytics } from '@vercel/analytics/react';
 import srmConvert from '../utils/srmConvert';
+import { FormatItalic } from '@mui/icons-material';
 
 const beerDescriptionList = [
-  'A nice light colored beer, with a hop-forward profile using Citra and Simcoe, and about 4.5% abv',
+  'A session IPA, with citra and simcoe hops, and about 4.5% abv',
   'A hoppy lager, with dark malts, and some flaked rice',
   'A raspberry kettle sour, with little to no bitterness',
   'A Pliny the Elder clone',
@@ -21,7 +22,7 @@ const beerDescriptionList = [
 
 function App() {
   const [beerDescription, setBeerDescription] = useState('');
-  const [beerVolume, setBeerVolume] = useState(23);
+  const [beerVolume, setBeerVolume] = useState(5);
   const [brewType, setBrewType] = useState('all grain');
   const [units, setUnits] = useState('metric');
   const [generatedResponse, setGeneratedResponse] = useState('');
@@ -128,17 +129,17 @@ function App() {
           const numberPattern = /[0-9]*\.?[0-9]+/g;
           // get everything after "Estimates:"
           const estTemp = genRes.split("Estimates:")[1];
+          // console.log(estTemp);
           // find number between "ABV:" and "SRM:"
-          const abvTemp = estTemp.split("ABV:")[1].split("SRM:")[0].match(numberPattern)[0];
-          setABV(abvTemp ? parseFloat(abvTemp).toFixed(1) : null);
+          const abvTemp = estTemp.split("ABV")[1].split("SRM")[0].match(numberPattern);
+          setABV(abvTemp ? parseFloat(abvTemp[0]).toFixed(1) : '?');
           // find number between "SRM:" and "IBU:"
-          const srmTemp = estTemp.split("SRM:")[1].split("IBU:")[0].match(numberPattern)[0];
-          setSRM(srmTemp ? parseFloat(srmTemp).toFixed(1) : null);
+          const srmTemp = estTemp.split("SRM")[1].split("IBU")[0].match(numberPattern);
+          setSRM(srmTemp ? parseFloat(srmTemp[0]).toFixed(1) : '?');
           // find number between after "IBU:"
-          const ibuTemp = estTemp.split("IBU:")[1].match(numberPattern)[0];
-          setIBU(ibuTemp ? parseFloat(ibuTemp).toFixed(0) : null);
+          const ibuTemp = estTemp.split("IBU")[1].match(numberPattern);
+          setIBU(ibuTemp ? parseFloat(ibuTemp[0]).toFixed(0) : '?');
           scrollToResponse(statsRef);
-          //console.log(genRes.split("Ingredients:")[0]);
         }
       } else if (genRes.split("Instructions:").length > 1) {
         scrollToResponse(instructionsRef);
@@ -190,18 +191,18 @@ function App() {
           <InputLabel >Measurement Units</InputLabel>
           <Select label="Measurement Units" value={units} onChange={(event) => handleChange(event, setUnits)}>
             <MenuItem value="metric">Metric</MenuItem>
-            <MenuItem value="imperial">Imperial</MenuItem>
+            <MenuItem value="US">US</MenuItem>
           </Select>
 
         </FormControl>
         <FormControl fullWidth margin="normal">
           <InputLabel >Desired Beer Volume</InputLabel>
           <Select label="Desired Beer Volume" value={beerVolume} onChange={(event) => handleChange(event, setBeerVolume)}>
-            <MenuItem value={4.5}>4.5 L    (1 Gal)</MenuItem>
-            <MenuItem value={11.4}>11.4 L   (2.5 Gal)</MenuItem>
-            <MenuItem value={23}>23 L   (5 Gal)</MenuItem>
-            <MenuItem value={45.5}>45.5 L   (10 Gal)</MenuItem>
-            {/* Add more options as needed */}
+            <MenuItem value={1}>1 US gal (3.8L)</MenuItem>
+            <MenuItem value={2.5}>2.5 US gal (9.5L)</MenuItem>
+            <MenuItem value={5}>5 US gal (18.9L)</MenuItem>
+            <MenuItem value={7.5}>7.5 US gal (28.4L)</MenuItem>
+            <MenuItem value={10}>10 US gal (37.9L)</MenuItem>
           </Select>
         </FormControl>
         <FormControl fullWidth margin="normal">
@@ -210,7 +211,6 @@ function App() {
             <MenuItem value="extract">Extract</MenuItem>
             <MenuItem value="all grain">All-Grain</MenuItem>
             <MenuItem value="brew in a bag">All-Grain BIAB (Brew In A Bag)</MenuItem>
-            {/* Add more options as needed */}
           </Select>
         </FormControl>
         <Button style={{ height: "50px", marginTop: "10px" }} fullWidth type="submit" variant="contained" color="primary" disabled={loading}>

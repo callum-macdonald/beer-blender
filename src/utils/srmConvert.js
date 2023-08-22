@@ -42,9 +42,16 @@ export default function srmConvert(srmEstimate) {
       40: '#36080A',
     };
 
-
-    const roundedNumber = Math.round(srmEstimate);
-    // Clamp the rounded number between 1 and 30 (inclusive)
-    const clampedNumber = Math.max(1, Math.min(roundedNumber, 40));
-    return colorHashTable[clampedNumber];
+    // Check if the SRM estimate is a number
+    if (isNaN(srmEstimate)) {
+      // return default color if not number
+      return colorHashTable[1];
+    }
+    else { 
+      // Round the SRM estimate to the nearest whole number
+      const roundedNumber = Math.round(srmEstimate);
+      // Clamp the rounded number between 1 and 30 (inclusive)
+      const clampedNumber = Math.max(1, Math.min(roundedNumber, 40));
+      return colorHashTable[clampedNumber];
+    }
   }
