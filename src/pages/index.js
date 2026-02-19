@@ -18,6 +18,11 @@ const beerDescriptionList = [
   'An imperial stout, using only English hops'  
 ]
 
+const SITE_URL = "https://www.beerblender.net";
+const SEO_TITLE = "BeerBlender | Homebrew Beer Recipe Generator";
+const SEO_DESCRIPTION =
+  "Generate custom homebrew beer recipes for all-grain, BIAB, and extract brewing, with ingredients, instructions, and ABV/SRM/IBU estimates.";
+
 
 
 function App() {
@@ -167,7 +172,43 @@ function App() {
   return (
     <Container className="Container" maxWidth="sm">
       <Head>
-        <title>BeerBlender</title>
+        <title>{SEO_TITLE}</title>
+        <meta name="description" content={SEO_DESCRIPTION} />
+        <meta
+          name="keywords"
+          content="homebrew recipes, homebrewing, beer recipe generator, all-grain brewing, BIAB, extract brewing, brewing science, beer forums"
+        />
+        <link rel="canonical" href={`${SITE_URL}/`} />
+
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={SEO_TITLE} />
+        <meta property="og:description" content={SEO_DESCRIPTION} />
+        <meta property="og:url" content={`${SITE_URL}/`} />
+        <meta property="og:site_name" content="BeerBlender" />
+        <meta property="og:image" content={`${SITE_URL}/BeerBlender.svg`} />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={SEO_TITLE} />
+        <meta name="twitter:description" content={SEO_DESCRIPTION} />
+        <meta name="twitter:image" content={`${SITE_URL}/BeerBlender.svg`} />
+
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "BeerBlender",
+              url: SITE_URL,
+              description: SEO_DESCRIPTION,
+              potentialAction: {
+                "@type": "SearchAction",
+                target: `${SITE_URL}/?q={search_term_string}`,
+                "query-input": "required name=search_term_string",
+              },
+            }),
+          }}
+        />
       </Head>
       <div className="logo">
         <Image priority="true" src="/BeerBlender.svg" alt="Logo" width={300} height={100} />
