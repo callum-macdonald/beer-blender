@@ -112,46 +112,57 @@ function App() {
     while (!done) {
       const { value, done: doneReading } = await reader.read();
       done = doneReading;
-      const chunkValue = decoder.decode(value);
-      setGeneratedResponse((prev) => prev + chunkValue);
+      if (value) {
+        const chunkValue = decoder.decode(value, { stream: !doneReading });
+        setGeneratedResponse((prev) => prev + chunkValue);
+      }
     }
 
     setLoading(false);
 
   };
 
-  function updateData(generatedResponse) {
-    useEffect(() => {
-      // clean potential heading markdown which sometimes occurs
-      let genRes = generatedResponse.replace(/\*\*/g, '');
-      if (genRes.split("Estimates:").length > 1) {
-        if (!loading) {
-          const numberPattern = /[0-9]*\.?[0-9]+/g;
-          // get everything after "Estimates:"
-          const estTemp = genRes.split("Estimates:")[1];
-          // console.log(estTemp);
-          // find number between "ABV:" and "SRM:"
-          const abvTemp = estTemp.split("ABV")[1].split("SRM")[0].match(numberPattern);
-          setABV(abvTemp ? parseFloat(abvTemp[0]).toFixed(1) : '?');
-          // find number between "SRM:" and "IBU:"
-          const srmTemp = estTemp.split("SRM")[1].split("IBU")[0].match(numberPattern);
-          setSRM(srmTemp ? parseFloat(srmTemp[0]).toFixed(1) : '?');
-          // find number between after "IBU:"
-          const ibuTemp = estTemp.split("IBU")[1].match(numberPattern);
-          setIBU(ibuTemp ? parseFloat(ibuTemp[0]).toFixed(0) : '?');
-          scrollToResponse(statsRef);
-        }
-      } else if (genRes.split("Instructions:").length > 1) {
-        scrollToResponse(instructionsRef);
-        setInstructions(genRes.split("Instructions:")[1].slice(0, -9));
-      } else if (genRes.split("Ingredients:").length > 1 && genRes.split("Ingredients:")[1].length >= 12) {
-        scrollToResponse(ingredientsRef);
-        setIngredients(genRes.split("Ingredients:")[1].slice(0, -12));
-      }
-    }, [generatedResponse, loading, abv]);
-  }
+  useEffect(() => {
+    const genRes = generatedResponse.replace(/\*\*/g, '');
+    const ingredientsHeader = "Ingredients:";
+    const instructionsHeader = "Instructions:";
+    const estimatesHeader = "Estimates:";
 
-  updateData(generatedResponse);
+    const ingredientsStart = genRes.indexOf(ingredientsHeader);
+    const instructionsStart = genRes.indexOf(instructionsHeader);
+    const estimatesStart = genRes.indexOf(estimatesHeader);
+
+    if (ingredientsStart !== -1) {
+      const start = ingredientsStart + ingredientsHeader.length;
+      const end = instructionsStart !== -1 ? instructionsStart : genRes.length;
+      const ingredientText = genRes.slice(start, end).trim();
+      if (ingredientText) {
+        setIngredients(ingredientText);
+        scrollToResponse(ingredientsRef);
+      }
+    }
+
+    if (instructionsStart !== -1) {
+      const start = instructionsStart + instructionsHeader.length;
+      const end = estimatesStart !== -1 ? estimatesStart : genRes.length;
+      const instructionText = genRes.slice(start, end).trim();
+      if (instructionText) {
+        setInstructions(instructionText);
+        scrollToResponse(instructionsRef);
+      }
+    }
+
+    if (estimatesStart !== -1 && !loading) {
+      const estTemp = genRes.slice(estimatesStart + estimatesHeader.length);
+      const abvMatch = estTemp.match(/ABV[^0-9]*([0-9]*\.?[0-9]+)/i);
+      const srmMatch = estTemp.match(/SRM[^0-9]*([0-9]*\.?[0-9]+)/i);
+      const ibuMatch = estTemp.match(/IBU[^0-9]*([0-9]*\.?[0-9]+)/i);
+      setABV(abvMatch?.[1] ? parseFloat(abvMatch[1]).toFixed(1) : '?');
+      setSRM(srmMatch?.[1] ? parseFloat(srmMatch[1]).toFixed(1) : '?');
+      setIBU(ibuMatch?.[1] ? parseFloat(ibuMatch[1]).toFixed(0) : '?');
+      scrollToResponse(statsRef);
+    }
+  }, [generatedResponse, loading]);
 
   return (
     <Container className="Container" maxWidth="sm">
@@ -225,13 +236,13 @@ function App() {
       {ingredients && (
         <div>
           <h2 ref={ingredientsRef}>Ingredients:</h2>
-          <pre className="ingredientsSection" style={{ whiteSpace: "pre-wrap", marginBottom: "10px" }}>{ingredients}</pre>
+          <pre className="ingredientsSection" style={{ whiteSpace: "pre-wrap", marginBottom: "10px" }}>{`\n${ingredients}\n`}</pre>
         </div>
       )}
       {instructions && (
         <div>
-          <h2 style={{ marginTop: "-15px" }} ref={instructionsRef}>Instructions:</h2>
-          <pre className="instructionSection" style={{ whiteSpace: "pre-wrap" }}>{instructions}</pre>
+          <h2 ref={instructionsRef}>Instructions:</h2>
+          <pre className="instructionSection" style={{ whiteSpace: "pre-wrap" }}>{`\n${instructions}\n`}</pre>
         </div>
       )}
       {abv && (
