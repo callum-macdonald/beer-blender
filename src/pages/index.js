@@ -185,12 +185,13 @@ function App() {
         <meta property="og:description" content={SEO_DESCRIPTION} />
         <meta property="og:url" content={`${SITE_URL}/`} />
         <meta property="og:site_name" content="BeerBlender" />
-        <meta property="og:image" content={`${SITE_URL}/BeerBlender.svg`} />
+        <meta property="og:image" content={`${SITE_URL}/og-beer-srm-5.svg`} />
+        <meta property="og:image:alt" content="BeerBlender beer glass render for SRM 5.0" />
 
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={SEO_TITLE} />
         <meta name="twitter:description" content={SEO_DESCRIPTION} />
-        <meta name="twitter:image" content={`${SITE_URL}/BeerBlender.svg`} />
+        <meta name="twitter:image" content={`${SITE_URL}/og-beer-srm-5.svg`} />
 
         <script
           type="application/ld+json"
