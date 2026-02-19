@@ -1,37 +1,36 @@
-// api/brew.js
-// based on gihub.com/Nutlope/twitterbio
 import { OpenAIStream } from "../../utils/OpenAIStream";
-
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error("Missing env var from OpenAI");
-}
 
 export const config = {
   runtime: "edge",
 };
 
 const handler = async (req: Request): Promise<Response> => {
+  if (!process.env.OPENAI_API_KEY) {
+    return new Response(
+      JSON.stringify({ error: "Server misconfiguration: OPENAI_API_KEY is missing." }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
 
   const { beerDescription, beerVolume, units, brewType } = (await req.json()) as {
-    beerDescription?: string,
-    beerVolume?: string,
-    units?: string,
-    brewType?: string
-    ;}
-  
+    beerDescription?: string;
+    beerVolume?: string;
+    units?: string;
+    brewType?: string;
+  };
 
-  // Construct the prompt for the OpenAI GPT API
-  const sysprompt = `You are a brewing assistant bot, you take a request from a user and return a concise response formatted as an ingredients list with a title of "Ingredients:", followed by a concise set of brewing instructions, with a title "Instructions:", followed by a list which contains the ABV, SRM, and IBU numbers of the final beer, with the title "Estimates:". Each new ingredient and each new instruction should begin with a new line.`
-  const prompt = `Generate a homebrewing beer recipe with this description: ${beerDescription}. I want the recipe to use the ${brewType} method, and result in a beer with a final volume of ${beerVolume} US gallons. Please give the answer in ${units} units.`
-  // ^^ Legacy prompts
-  //const sysprompt = `You are a brewing assistant bot, you take a recipe request from a user and return a concise response formatted as follows: A concise ingredients list with a title of "Ingredients:", followed by a concise set of brewing instructions with a title "Instructions:", followed by a list which contains the estimates of the ABV, SRM, and IBU of the final beer, with the title "Estimates:". Each new ingredient and each new instruction should begin with a new line. Assume a loss of 1 Litre of water per kg of grain ingredients, and a loss of about 100mL per Liter of water per hour due to boil off, you must account for these losses to reach the user requested final volume of beer.`
-  //const prompt = `Generate a homebrewing beer recipe with this description: ${beerDescription}. I want the recipe to use the ${brewType} method. Please ensure the instructions will result in a final volume of ${beerVolume} liters. Please use ${units} units in your response.`
-  
+  const sysprompt =
+    'You are a brewing assistant bot, you take a request from a user and return a concise response formatted as an ingredients list with a title of "Ingredients:", followed by a concise set of brewing instructions, with a title "Instructions:", followed by a list which contains the ABV, SRM, and IBU numbers of the final beer, with the title "Estimates:". Each new ingredient and each new instruction should begin with a new line.';
+  const prompt = `Generate a homebrewing beer recipe with this description: ${beerDescription}. I want the recipe to use the ${brewType} method, and result in a beer with a final volume of ${beerVolume} US gallons. Please give the answer in ${units} units.`;
+
   const payload = {
     model: "gpt-3.5-turbo",
     messages: [
       { role: "system", content: sysprompt },
-      { role: "user", content: prompt }
+      { role: "user", content: prompt },
     ],
     temperature: 0.7,
     top_p: 1,
@@ -41,7 +40,16 @@ const handler = async (req: Request): Promise<Response> => {
     n: 1,
   };
 
-  const stream = await OpenAIStream(payload);
-  return new Response(stream);
-}; 
-export default handler
+  try {
+    const stream = await OpenAIStream(payload);
+    return new Response(stream);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown OpenAI error.";
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+};
+
+export default handler;

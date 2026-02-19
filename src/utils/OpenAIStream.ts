@@ -1,5 +1,3 @@
-// From github.com/Nutlope/twitterbio
-
 import { createParser, ParsedEvent, ReconnectInterval } from "eventsource-parser";
 
 export async function OpenAIStream(payload) {
@@ -17,6 +15,15 @@ export async function OpenAIStream(payload) {
     body: JSON.stringify(payload),
   });
 
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(`OpenAI request failed (${res.status}): ${errorBody}`);
+  }
+
+  if (!res.body) {
+    throw new Error("OpenAI response did not include a stream body.");
+  }
+
   const stream = new ReadableStream({
     async start(controller) {
       function onParse(event: ParsedEvent | ReconnectInterval) {
@@ -31,7 +38,6 @@ export async function OpenAIStream(payload) {
             const text = json.choices[0].delta?.content || "";
 
             if (counter < 2 && (text.match(/\n/) || []).length) {
-              // this is a prefix character (i.e., "\n\n"), do nothing
               return;
             }
             const queue = encoder.encode(text);
@@ -43,11 +49,8 @@ export async function OpenAIStream(payload) {
         }
       }
 
-     // stream response (SSE) from OpenAI may be fragmented into multiple chunks
-     // this ensures we properly read chunks & invoke an event for each SSE event stream
-     const parser = createParser(onParse);
+      const parser = createParser(onParse);
 
-      // https://web.dev/streams/#asynchronous-iteration
       for await (const chunk of res.body as any) {
         parser.feed(decoder.decode(chunk));
       }
